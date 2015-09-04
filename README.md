@@ -1,0 +1,1 @@
+# fullwidth-touch-slider-responsive
