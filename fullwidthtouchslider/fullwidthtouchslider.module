@@ -1,0 +1,181 @@
+<?php
+
+function fullwidthtouchslider_menu() {
+    $items['admin/structure/fullwidthtouchslider'] = array(
+        'title' => t('Full Width Touch Slider'),
+        'page callback' => 'fullwidthtouchslider_overview',
+        'access arguments' => array('administer site configuration'),
+        'description' => t('Full Page Slider')
+    );
+    $items['admin/structure/fullwidthtouchslider/add'] = array(
+        'title' => t('Full Width Touch Slider'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('fullwidthtouchslider_form'),
+        'access arguments' => array('administer site configuration'),
+        'description' => t('Full Page Slider')
+    );
+    $items['admin/structure/fullwidthtouchslider/slide/delete/%'] = array(
+        'title' => t('Are you sure want to delete slide'),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('fullwidthtouchslider_delete_form'),
+        'access arguments' => array('administer site configuration'),
+        'description' => t('Full Page Slider')
+    );
+    return $items;
+}
+
+
+function fullwidthtouchslider_overview() {
+    try{
+        $slides = db_query("SELECT * FROM {fullwidthtouchslider_data} ORDER BY id", array(), array('fetch' => PDO::FETCH_ASSOC));
+        $header = array(t('heading'), t('Description'), t('Large Image'), t('Small Image'),
+            array(
+                'data' => t('Operations'),
+                'colspan' => '2',
+        ));
+        $html = '';
+        $html = l(t('add slides'), 'admin/structure/fullwidthtouchslider/add');
+        $html .= '<h1>Slides</h1>';
+        $rows = array();
+        foreach ($slides as $slide) {
+            $row = array(
+                'heading' => $slide['heading'],
+                'Description' => $slide['description'],
+                'Large image' => file_create_url(file_load($slide['slide_fid'])->uri),
+                'Small image' => $slide['image_fid'],
+            );
+            $row[] = array('data' => l(t('Edit'), 'admin/structure/fullwidthtouchslider/slide/edit/' . $slide['id']));
+            $row[] = array('data' => l(t('Delete'), 'admin/structure/fullwidthtouchslider/slide/delete/' . $slide['id']));
+            $rows[] = $row;
+        }
+        return $html . theme('table', array('header' => $header, 'rows' => $rows));
+    } catch (Exception $ex) {
+        return $ex->getMessage();
+    }
+}
+
+function fullwidthtouchslider_delete_form() {
+    $form = array();
+    $form['fullwidthtouchslider_markup'] = array(
+        '#type' => 'markup',
+        '#required' => TRUE,
+        '#markup'   => t('Are you sure want to delete this slide'),
+        '#weight' => 1
+    );
+    $form['fullwidthtouchslider_slidenumber'] = array(
+        '#type' => 'textfield',
+        '#value' => (arg(5))?arg(5):"",
+        '#required' => TRUE,
+        '#weight' => 2
+    );
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Delete'),
+        '#weight' => 3
+    );
+    $form['cencle'] = array(
+        '#type' => 'submit',
+        '#value' => t('Cencle'),
+        '#weight' => 4
+    );
+    return $form;
+}
+
+function fullwidthtouchslider_form() {
+    $form = array();
+    $form['fullwidthtouchslider_headnig'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Heading',
+        '#required' => TRUE,
+        '#weight' => 1
+    );
+    $form['fullwidthtouchslider_description'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Description',
+        '#required' => TRUE,
+        '#weight' => 2
+    );
+    $form['fullwidthtouchslider_slide_image'] = array(
+        '#type' => 'managed_file',
+        '#name' => 'fullwidthtouchslider_slide_image',
+        '#title' => t('Upload Sider large Image'),
+        '#description' => t("Sliderfull width image"),
+        '#file_validate_extensions' => array(
+            'png gif jpg jpeg'
+        ),
+        '#upload_location' => 'public://fullwidthslider_data/',
+        '#weight' => 3
+    );
+    $form['fullwidthtouchslider_textarea'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Side Section'),
+        '#description' => t("Side Section Content"),
+        '#weight' => 4
+    );
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Add Slide'),
+        '#weight' => 5
+    );
+    return $form;
+}
+
+function fullwidthtouchslider_form_submit($form, &$form_state) {
+    try{
+        $data       = $form_state['values'];
+        $heading    = $data['fullwidthtouchslider_headnig'];
+        $desc       = $data['fullwidthtouchslider_description'];
+        $fimg       = ($data['fullwidthtouchslider_slide_image'])?$data['fullwidthtouchslider_slide_image']:"";
+        $stxt       = ($data['fullwidthtouchslider_textarea'])?$data['fullwidthtouchslider_textarea']:"";
+        if(isset($fimg) && $fimg!="") {
+            $file = file_load($fimg);
+            $file->status = FILE_STATUS_PERMANENT;
+            file_save($file);
+        }
+        $query = db_insert('fullwidthtouchslider_data')->fields(array(
+                    'heading' => $heading,
+                    'description' => $desc,
+                    'slide_fid' => $fimg,
+                    'image_fid' => $stxt
+                ))->execute();
+        drupal_set_message('Slide has been insterted successfully');
+    } catch (Exception $ex) {
+        drupal_set_message($ex->getMessage());
+    }
+}
+
+function fullwidthtouchslider_block_info() {
+    $blocks['fullwidthtouchslider'] = array(
+        'info' => t('full width touch slider'),
+        'cache' => DRUPAL_NO_CACHE,
+    );
+    return $blocks;
+}
+
+function fullwidthtouchslider_block_view($delta = '') {
+    $block = array();
+
+    switch ($delta) {
+        case 'fullwidthtouchslider':
+            $block['subject'] = t('Full WidthSlider');
+            $block['content'] = get_fullwidthtouchslider();
+            break;
+    }
+    return $block;
+}
+
+function get_fullwidthtouchslider() {
+    $data = db_select('fullwidthtouchslider_data', 'fws')
+                    ->fields('fws')->execute()->fetchAll();
+    return theme('fullwidthslider', array('data' => $data));
+}
+
+function fullwidthtouchslider_theme() {
+    $themes = array(
+        'fullwidthslider' => array(
+            'template' => '/templates/homepageslider', // your template file called custompage.tpl.php
+            'arguments' => array(),
+        ),
+    );
+    return $themes;
+}
