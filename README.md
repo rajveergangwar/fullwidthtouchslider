@@ -1,1 +1,2 @@
-# fullwidth-touch-slider-responsive
+# FULL WIDTH RESPONSIVE TOUCH SLIDER
+DRUPAL 7 MODULE FOR HOME PAGE SLIDER
