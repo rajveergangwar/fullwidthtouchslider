@@ -1,5 +1,8 @@
 <?php
 
+/**
+Implement HOOK_MENU
+*/
 function fullwidthtouchslider_menu() {
     $items['admin/structure/fullwidthtouchslider'] = array(
         'title' => t('Full Width Touch Slider'),
@@ -12,23 +15,25 @@ function fullwidthtouchslider_menu() {
         'page callback' => 'drupal_get_form',
         'page arguments' => array('fullwidthtouchslider_form'),
         'access arguments' => array('administer site configuration'),
-        'description' => t('Full Page Slider')
+        'description' => t('Add Slides for Full page slider')
     );
     $items['admin/structure/fullwidthtouchslider/slide/delete/%'] = array(
         'title' => t('Are you sure want to delete slide'),
         'page callback' => 'drupal_get_form',
         'page arguments' => array('fullwidthtouchslider_delete_form'),
         'access arguments' => array('administer site configuration'),
-        'description' => t('Full Page Slider')
+        'description' => t('Delete slide for full slider')
     );
     return $items;
 }
 
-
+/**
+Implement HOOK_OVERVIEW
+*/
 function fullwidthtouchslider_overview() {
     try{
         $slides = db_query("SELECT * FROM {fullwidthtouchslider_data} ORDER BY id", array(), array('fetch' => PDO::FETCH_ASSOC));
-        $header = array(t('heading'), t('Description'), t('Large Image'), t('Small Image'),
+        $header = array(t('heading'), t('Description'), t('Large Image'), t('Small Description'),
             array(
                 'data' => t('Operations'),
                 'colspan' => '2',
@@ -41,8 +46,8 @@ function fullwidthtouchslider_overview() {
             $row = array(
                 'heading' => $slide['heading'],
                 'Description' => $slide['description'],
-                'Large image' => file_create_url(file_load($slide['slide_fid'])->uri),
-                'Small image' => $slide['image_fid'],
+                'Large image' => "URL: ".file_create_url(file_load($slide['slide_fid'])->uri).' <br/ ><a href="'.file_create_url(file_load($slide['slide_fid'])->uri).'" target="blank">Click Here</a>',
+                'Small Description' => $slide['image_fid'],
             );
             $row[] = array('data' => l(t('Edit'), 'admin/structure/fullwidthtouchslider/slide/edit/' . $slide['id']));
             $row[] = array('data' => l(t('Delete'), 'admin/structure/fullwidthtouchslider/slide/delete/' . $slide['id']));
@@ -54,6 +59,11 @@ function fullwidthtouchslider_overview() {
     }
 }
 
+/**
+    Implement HOOK_FORM
+    This form in for delting the slide
+    hidden filed with slider id
+*/
 function fullwidthtouchslider_delete_form() {
     $form = array();
     $form['fullwidthtouchslider_markup'] = array(
@@ -80,6 +90,31 @@ function fullwidthtouchslider_delete_form() {
     );
     return $form;
 }
+
+/**
+    Implement HOOK_FORM_SUBMIT
+    submit form for deleting the slide
+*/
+function fullwidthtouchslider_delete_form_submit($form , &$form_state) {
+    dpm($form_state['values']);
+    $values         =   $form_state['values'];
+    $op             =   $values['op'];
+    $slide_number   =   $values['fullwidthtouchslider_slidenumber'];
+    if(is_numeric($slide_number)) {
+        if($op=='Cencle')   {
+            drupal_goto('admin/structure/fullwidthtouchslider');
+        } else {
+            $query  =   db_query("DELETE from fullwidthtouchslider_data where id='$slide_number'");
+            drupal_set_message('Slide has been deleted');
+            drupal_goto('admin/structure/fullwidthtouchslider/slide');
+        }
+    }
+}
+
+/**
+    Implement HOOK_FORM
+    this form is for uploading the slide for full width slider
+*/
 
 function fullwidthtouchslider_form() {
     $form = array();
@@ -120,6 +155,10 @@ function fullwidthtouchslider_form() {
     return $form;
 }
 
+/**
+    Implement HOOK_FORM_SUBMIT
+    submit form for slide
+*/
 function fullwidthtouchslider_form_submit($form, &$form_state) {
     try{
         $data       = $form_state['values'];
@@ -144,6 +183,9 @@ function fullwidthtouchslider_form_submit($form, &$form_state) {
     }
 }
 
+/**
+    Implement HOOK_BLOCK_INFO
+*/
 function fullwidthtouchslider_block_info() {
     $blocks['fullwidthtouchslider'] = array(
         'info' => t('full width touch slider'),
@@ -152,6 +194,10 @@ function fullwidthtouchslider_block_info() {
     return $blocks;
 }
 
+
+/**
+    Implement HOOK_BLOCK_VIEW
+*/
 function fullwidthtouchslider_block_view($delta = '') {
     $block = array();
 
@@ -164,12 +210,19 @@ function fullwidthtouchslider_block_view($delta = '') {
     return $block;
 }
 
+/**
+    Implement return function for block content
+    @return theme
+*/
 function get_fullwidthtouchslider() {
     $data = db_select('fullwidthtouchslider_data', 'fws')
                     ->fields('fws')->execute()->fetchAll();
     return theme('fullwidthslider', array('data' => $data));
 }
 
+/**
+    Implement HOOK_THEME
+*/
 function fullwidthtouchslider_theme() {
     $themes = array(
         'fullwidthslider' => array(

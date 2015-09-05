@@ -1,0 +1,41 @@
+<?php
+function fullwidthtouchslider_schema() {
+  $schema['fullwidthtouchslider_data'] = array(
+ 	'description' => t('The base table for full width touch slider.'),
+	    'fields' => array(
+	      'id' => array(
+	        'description' => 'The primary identifier for a slide.',
+	        'type' => 'serial',
+	        'unsigned' => TRUE,
+	        'not null' => TRUE),
+
+	      'heading' => array(
+	        'description' => 'heading for slide on left side up',
+	        'type' => 'varchar',
+	        'length' => 255,
+	        'not null' => TRUE,
+	        'default' => 0),
+
+	      'description' => array(
+	        'description' => 'heading for slide on left side down',
+	        'type' => 'varchar',
+	        'length' => 255,
+	        'not null' => TRUE,
+	        'default' => ''),
+
+	      'slide_fid' => array(
+	        'description' => 'Slide file id',
+	        'type' => 'int',
+	        'unsigned' => TRUE,
+	        'not null' => TRUE,
+	        'default' => 0),
+
+	        'image_fid' => array(
+	        'description' => 'small description on right side',
+	        'type' => 'text',
+	        ),
+		),
+	    'primary key' => array('id'),
+  	);
+  return $schema;
+}
