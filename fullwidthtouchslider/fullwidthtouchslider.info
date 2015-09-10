@@ -3,7 +3,6 @@ description = full width touch slider
 package = content
 core = 7.x
 php = 5
-stylesheets[all][] = css/style.css
 ; Information added by drupal.org packaging script on 2011-08-31
 version = "7.x-1.1"
 core = "7.x"
