@@ -171,7 +171,7 @@ function fullwidthtouchslider_form() {
             '#prefix'       =>  '<div id="remove-file-callback-wrapper">',
             '#suffix'       =>  '</div>',
         );
-        $form['fullwidthtouchslider']['fullwidthtouchslider_slide_image'] = array(
+        $form['fullwidthtouchslider']['fullwidthtouchslider_slide_image_desc'] = array(
             '#type'         =>  'markup',
             '#title'        =>  t('Upload Sider large Image'),
             '#description'  =>  t("Sliderfull width image"),
@@ -180,8 +180,13 @@ function fullwidthtouchslider_form() {
                                 .'<img src="'.file_create_url($fileObj->uri).'" width="300px" height="200px" class="img-responsive">',
             '#weight'       => 3
         );
-        $form['fullwidthtouchslider']['fullwidthtouchslider_slide_id']    =   array(
+        $form['fullwidthtouchslider_slide_image'] = array(
             '#type' => 'hidden',
+            '#default_value'    => $fid,
+            '#weight' => 3
+        );
+        $form['fullwidthtouchslider']['fullwidthtouchslider_slide_id']    =   array(
+            '#type' => 'textfield',
             '#default_value' => $default_values['id'],
             '#weight' => 5,
         );
@@ -196,7 +201,7 @@ function fullwidthtouchslider_form() {
         );
         
         $form['fullwidthtouchslider']['fullwidthtouchslider_slide_image_id'] = array(
-            '#type' => 'textfield',
+            '#type' => 'hidden',
             '#value'=>  $fid,
             '#weight' => 3,
         );
@@ -210,8 +215,16 @@ function fullwidthtouchslider_form() {
                 'png gif jpg jpeg'
             ),
             '#upload_location' => 'public://fullwidthslider_data/',
-            '#weight' => 3
+            '#weight' => 3,
+            '#required'=>TRUE,
         );
+        if(isset($default_values['slide_fid']) && $default_values['slide_fid']==0) {
+            $form['fullwidthtouchslider_slide_id']    =   array(
+                '#type' => 'hidden',
+                '#default_value' => $default_values['id'],
+                '#weight' => 5,
+            );
+        }
     }
     $form['fullwidthtouchslider_textarea'] = array(
         '#type' => 'text_format',
@@ -237,7 +250,7 @@ function fullwidthtouchslider_form() {
 }
 
 /**
- * 
+ * Callback function for remove button 
  */
 function remove_file_callback($form,$form_state) {
     $fileId     =   $form_state['values']['fullwidthtouchslider_slide_image_id'];
@@ -268,18 +281,26 @@ function fullwidthtouchslider_form_submit($form, &$form_state) {
         $desc       = $data['fullwidthtouchslider_description'];
         $fimg       = ($data['fullwidthtouchslider_slide_image'])?$data['fullwidthtouchslider_slide_image']:"";
         $stxt       = ($data['fullwidthtouchslider_textarea']['value'])?$data['fullwidthtouchslider_textarea']['value']:"";
-        if(isset($fimg) && $fimg!="") {
+        if(arg(4)=='edit') {
+            $slid   =   $data['fullwidthtouchslider_slide_id'];
+            $query      =   db_update('fullwidthtouchslider_data')
+                            ->fields(array('slide_fid'=>$fimg,'heading'=>$heading,'description'=>$desc,'image_fid'=>$stxt))
+                            ->condition('id',$slid,'=')->execute();
+            drupal_set_message('slide has been updated successfully');
+        } else {
+            if(isset($fimg) && $fimg!="" && $fimg!=0) {
             $file = file_load($fimg);
             $file->status = FILE_STATUS_PERMANENT;
             file_save($file);
+            }
+            $query = db_insert('fullwidthtouchslider_data')->fields(array(
+                        'heading' => $heading,
+                        'description' => $desc,
+                        'slide_fid' => $fimg,
+                        'image_fid' => $stxt
+                    ))->execute();
+            drupal_set_message('Slide has been insterted successfully');
         }
-        $query = db_insert('fullwidthtouchslider_data')->fields(array(
-                    'heading' => $heading,
-                    'description' => $desc,
-                    'slide_fid' => $fimg,
-                    'image_fid' => $stxt
-                ))->execute();
-        drupal_set_message('Slide has been insterted successfully');
     } catch (Exception $ex) {
         drupal_set_message($ex->getMessage());
     }
