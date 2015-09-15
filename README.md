@@ -1,4 +1,4 @@
-# Full width slide which is responsive and mobile friendly
+# Full width slider which is responsive and mobile friendly
 * Introduction
  		this module create a full width slide which is responsive and mobile friendly
  
