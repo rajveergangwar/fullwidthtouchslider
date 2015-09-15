@@ -27,7 +27,7 @@ function fullwidthtouchslider_menu() {
     $items['admin/structure/fullwidthtouchslider/slide/edit/%'] = array(
         'title' => t('Edit This Slide'),
         'page callback' => 'drupal_get_form',
-        'page arguments' => array('fullwidthtouchslider_edit_form'),
+        'page arguments' => array('fullwidthtouchslider_form'),
         'access arguments' => array('administer site configuration'),
         'description' => t('Edit slide for full slider')
     );    
@@ -102,17 +102,14 @@ function fullwidthtouchslider_delete_form() {
  * Implement HOOK_FORM
  */
 
-function fullwidthtouchslider_edit_form() {
-    $form   =   array();
-    $form['fullwidthtouchslider_markup'] = array(
-        '#type' => 'markup',
-        '#required' => TRUE,
-        '#markup'   => t('Are you sure want to edit this slide'),
-        '#weight' => 1
-    );
-    return $form;
+function get_edit_slide_information() {
+    $id     =   arg(5);
+    $slides =   db_select('fullwidthtouchslider_data','tbl')
+                ->fields('tbl',array())
+                ->condition('id',$id,'=')
+                ->execute()->fetchAssoc();
+    return $slides;
 }
-
 /**
     Implement HOOK_FORM_SUBMIT
     submit form for deleting the slide
@@ -142,44 +139,124 @@ function fullwidthtouchslider_delete_form_submit($form , &$form_state) {
 */
 
 function fullwidthtouchslider_form() {
+    $default_values =   array();
+    if((arg(4)) && arg(4)=='edit') {
+        $default_values =   get_edit_slide_information();
+    }
     $form = array();
     $form['fullwidthtouchslider_headnig'] = array(
         '#type' => 'textfield',
         '#title' => 'Heading',
         '#required' => TRUE,
+        '#default_value'    =>  ($default_values['heading'])?$default_values['heading']:"",
         '#weight' => 1
     );
     $form['fullwidthtouchslider_description'] = array(
         '#type' => 'textfield',
         '#title' => 'Description',
         '#required' => TRUE,
+        '#default_value'    =>  ($default_values['heading'])?$default_values['heading']:"",
         '#weight' => 2
     );
-    $form['fullwidthtouchslider_slide_image'] = array(
-        '#type' => 'managed_file',
-        '#name' => 'fullwidthtouchslider_slide_image',
-        '#title' => t('Upload Sider large Image'),
-        '#description' => t("Sliderfull width image"),
-        '#file_validate_extensions' => array(
-            'png gif jpg jpeg'
-        ),
-        '#upload_location' => 'public://fullwidthslider_data/',
-        '#weight' => 3
-    );
+    if(isset($default_values['slide_fid']) && $default_values['slide_fid']!=0) {
+        $fid        =   $default_values['slide_fid'];
+        $fileObj    =   file_load($fid);
+        
+        $form['fullwidthtouchslider'] = array(
+            '#type' => 'fieldset',
+            '#title' => t('Slide Image'),
+            '#collapsible' => TRUE, // Added
+            '#collapsed' => FALSE,  // Added
+            '#weight'       => 3,
+            '#prefix'       =>  '<div id="remove-file-callback-wrapper">',
+            '#suffix'       =>  '</div>',
+        );
+        $form['fullwidthtouchslider']['fullwidthtouchslider_slide_image'] = array(
+            '#type'         =>  'markup',
+            '#title'        =>  t('Upload Sider large Image'),
+            '#description'  =>  t("Sliderfull width image"),
+            '#markup'       =>  '<img class="file-icon" alt="" title="image/png" src="/modules/file/icons/image-x-generic.png">'
+                                . '<a target="blank" href="'.file_create_url($fileObj->uri).'">'.$fileObj->filename.'</a>'
+                                .'<img src="'.file_create_url($fileObj->uri).'" width="300px" height="200px" class="img-responsive">',
+            '#weight'       => 3
+        );
+        $form['fullwidthtouchslider']['fullwidthtouchslider_slide_id']    =   array(
+            '#type' => 'hidden',
+            '#default_value' => $default_values['id'],
+            '#weight' => 5,
+        );
+        $form['fullwidthtouchslider']['fullwidthtouchslider_slide_image_remove']    =   array(
+            '#type' => 'submit',
+            '#value' => t('remove'),
+            '#ajax' => array(
+                'callback' => 'remove_file_callback',
+                'wrapper' => 'remove-file-callback-wrapper',
+              ),
+            '#weight' => 5
+        );
+        
+        $form['fullwidthtouchslider']['fullwidthtouchslider_slide_image_id'] = array(
+            '#type' => 'textfield',
+            '#value'=>  $fid,
+            '#weight' => 3,
+        );
+    }else {
+        $form['fullwidthtouchslider_slide_image'] = array(
+            '#type' => 'managed_file',
+            '#name' => 'fullwidthtouchslider_slide_image',
+            '#title' => t('Upload Sider large Image'),
+            '#description' => t("Sliderfull width image"),
+            '#file_validate_extensions' => array(
+                'png gif jpg jpeg'
+            ),
+            '#upload_location' => 'public://fullwidthslider_data/',
+            '#weight' => 3
+        );
+    }
     $form['fullwidthtouchslider_textarea'] = array(
         '#type' => 'text_format',
         '#title' => t('Side Section'),
         '#description' => t("Side Section Content"),
-        '#weight' => 4
+        '#weight' => 4,
+        '#default_value' => ($default_values['image_fid'])?$default_values['image_fid']:"",
     );
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Add Slide'),
-        '#weight' => 5
-    );
+    if(empty($default_values)){
+        $form['submit'] = array(
+            '#type' => 'submit',
+            '#value' => t('Add Slide'),
+            '#weight' => 5
+        );
+    } else {
+        $form['submit'] = array(
+            '#type' => 'submit',
+            '#value' => t('Update'),
+            '#weight' => 5
+        );
+    }
     return $form;
 }
 
+/**
+ * 
+ */
+function remove_file_callback($form,$form_state) {
+    $fileId     =   $form_state['values']['fullwidthtouchslider_slide_image_id'];
+    $slid       =   $form_state['values']['fullwidthtouchslider_slide_id'];
+    if(file_load($fileId)) {
+        file_delete(file_load($fileId));
+    }
+    $query      =   db_update('fullwidthtouchslider_data')
+                    ->fields(array('slide_fid'=>0))
+                    ->condition('id',$slid,'=')->execute();
+    if ($query) {
+            $ret =  '<script>';
+            $ret .= 'jQuery(document).ready(function($) {';
+            $ret .= '  location.reload(true);';
+            $ret .= '});';
+            $ret .= '</script>';
+    }
+    return $ret;
+}
 /**
     Implement HOOK_FORM_SUBMIT
     submit form for slide
