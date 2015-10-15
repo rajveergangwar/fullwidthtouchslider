@@ -56,7 +56,7 @@ function fullwidthtouchslider_overview() {
                 'Large image' => "URL: ".file_create_url(file_load($slide['slide_fid'])->uri).' <br/ ><a href="'.file_create_url(file_load($slide['slide_fid'])->uri).'" target="blank">Click Here</a>',
                 'Small Description' => $slide['image_fid'],
             );
-            $row[] = array('data' => l(t('Edit'), 'admin/structure/fullwidthtouchslider/slide/edit/' . $slide['id']));
+            $row[] = array('data' => l(t(''), 'admin/structure/fullwidthtouchslider/slide/edit/' . $slide['id']));
             $row[] = array('data' => l(t('Delete'), 'admin/structure/fullwidthtouchslider/slide/delete/' . $slide['id']));
             $rows[] = $row;
         }
@@ -148,14 +148,14 @@ function fullwidthtouchslider_form() {
         '#type' => 'textfield',
         '#title' => 'Heading',
         '#required' => TRUE,
-        '#default_value'    =>  ($default_values['heading'])?$default_values['heading']:"",
+        '#default_value'    =>  isset($default_values['heading'])?$default_values['heading']:"",
         '#weight' => 1
     );
     $form['fullwidthtouchslider_description'] = array(
         '#type' => 'textfield',
         '#title' => 'Description',
         '#required' => TRUE,
-        '#default_value'    =>  ($default_values['heading'])?$default_values['heading']:"",
+        '#default_value'    =>  isset($default_values['heading'])?$default_values['heading']:"",
         '#weight' => 2
     );
     if(isset($default_values['slide_fid']) && $default_values['slide_fid']!=0) {
@@ -163,10 +163,10 @@ function fullwidthtouchslider_form() {
         $fileObj    =   file_load($fid);
         
         $form['fullwidthtouchslider'] = array(
-            '#type' => 'fieldset',
-            '#title' => t('Slide Image'),
-            '#collapsible' => TRUE, // Added
-            '#collapsed' => FALSE,  // Added
+            '#type'         => 'fieldset',
+            '#title'        => t('Slide Image'),
+            '#collapsible'  => TRUE, // Added
+            '#collapsed'    => FALSE,  // Added
             '#weight'       => 3,
             '#prefix'       =>  '<div id="remove-file-callback-wrapper">',
             '#suffix'       =>  '</div>',
@@ -176,8 +176,7 @@ function fullwidthtouchslider_form() {
             '#title'        =>  t('Upload Sider large Image'),
             '#description'  =>  t("Sliderfull width image"),
             '#markup'       =>  '<img class="file-icon" alt="" title="image/png" src="/modules/file/icons/image-x-generic.png">'
-                                . '<a target="blank" href="'.file_create_url($fileObj->uri).'">'.$fileObj->filename.'</a>'
-                                .'<img src="'.file_create_url($fileObj->uri).'" width="300px" height="200px" class="img-responsive">',
+                                . '<a target="blank" href="'.file_create_url($fileObj->uri).'">'.$fileObj->filename.'</a>',
             '#weight'       => 3
         );
         $form['fullwidthtouchslider_slide_image'] = array(
@@ -186,7 +185,7 @@ function fullwidthtouchslider_form() {
             '#weight' => 3
         );
         $form['fullwidthtouchslider']['fullwidthtouchslider_slide_id']    =   array(
-            '#type' => 'textfield',
+            '#type' => 'hidden',
             '#default_value' => $default_values['id'],
             '#weight' => 5,
         );
@@ -211,9 +210,7 @@ function fullwidthtouchslider_form() {
             '#name' => 'fullwidthtouchslider_slide_image',
             '#title' => t('Upload Sider large Image'),
             '#description' => t("Sliderfull width image"),
-            '#file_validate_extensions' => array(
-                'png gif jpg jpeg'
-            ),
+            '#file_validate_extensions' => array('png gif jpg jpeg'),
             '#upload_location' => 'public://fullwidthslider_data/',
             '#weight' => 3,
             '#required'=>TRUE,
@@ -231,7 +228,7 @@ function fullwidthtouchslider_form() {
         '#title' => t('Side Section'),
         '#description' => t("Side Section Content"),
         '#weight' => 4,
-        '#default_value' => ($default_values['image_fid'])?$default_values['image_fid']:"",
+        '#default_value' => isset($default_values['image_fid'])?$default_values['image_fid']:"",
     );
     if(empty($default_values)){
         $form['submit'] = array(
@@ -353,7 +350,7 @@ function get_fullwidthtouchslider() {
 function fullwidthtouchslider_theme() {
     $themes = array(
         'fullwidthslider' => array(
-            'template' => '/templates/homepageslider', // your template file called custompage.tpl.php
+            'template' => '/templates/full-width-slider', // your template file called custompage.tpl.php
             'arguments' => array(),
         ),
     );
